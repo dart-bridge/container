@@ -66,11 +66,7 @@ abstract class Container {
   /// be injected instead.
   ///
   /// Optionally set the type to bind as. This is especially useful if you want
-  /// to have a singleton instance of an abstract class.
-  ///
-  /// Optionally provide named parameters to be inserted in the invocation.
-  /// Optionally provide temporary singletons, to potentially be injected
-  /// into the invocation.
+  /// to have a singleton instance of an interface implementation.
   void singleton(Object singleton, {Type as});
 
   /// Binds an abstract class to an implementation, so that the
