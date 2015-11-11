@@ -21,11 +21,11 @@ class _Container implements Container {
     final decorators = _decorators[type] ?? [];
 
     if (_singletons.containsKey(type))
-      return _decorate(_singletons[type], decorators);
+      return _applyDecorators(_singletons[type], decorators);
 
     if (_bindings.containsKey(type)) type = _bindings[type];
 
-    return _decorate(_make(type, namedParameters, injecting), decorators);
+    return _applyDecorators(_make(type, namedParameters, injecting), decorators);
   }
 
   resolve(Function function,
@@ -141,7 +141,7 @@ class _Container implements Container {
     return reflect(object).type.instanceMembers.containsKey(new Symbol(method));
   }
 
-  Function presolve(Function function,
+  Function curry(Function function,
       {Map<String, dynamic> namedParameters,
       Map<Type, dynamic> injecting}) {
     return ([arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10]) {
@@ -159,12 +159,9 @@ class _Container implements Container {
     };
   }
 
-  void decorate(Type target,
-      {Type decorator,
+  void _decorate(Type target, Type decorator,
       Map<String, dynamic> namedParameters,
-      Map<Type, dynamic> injecting}) {
-    if (decorator == null)
-      throw new ArgumentError('A decorator must be provided.');
+      Map<Type, dynamic> injecting) {
     if (!reflectType(decorator).isAssignableTo(reflectType(target)))
       throw new ArgumentError('The decorator must implement [$target].');
     _decorators[target] ??= [];
@@ -176,7 +173,22 @@ class _Container implements Container {
     });
   }
 
-  _decorate(Object instance, List<Function> decorators) {
+  void decorate(Type target,
+      {Type decorator,
+      Iterable<Type> decorators,
+      Map<String, dynamic> namedParameters,
+      Map<Type, dynamic> injecting}) {
+    final allDecorators = []
+      ..addAll(decorators ?? []);
+    if (decorator != null)
+      allDecorators.add(decorator);
+    if (allDecorators.isEmpty)
+      throw new ArgumentError('A decorator must be provided.');
+    for(final decorator in allDecorators)
+      _decorate(target, decorator, namedParameters, injecting);
+  }
+
+  _applyDecorators(Object instance, List<Function> decorators) {
     var _instance = instance;
     for (final decoratorFunction in decorators)
       _instance = decoratorFunction(_instance);

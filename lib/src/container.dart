@@ -83,11 +83,17 @@ abstract class Container {
   /// evaluating the inner function and returning the response.
   ///
   ///     functionWillBeInjected(SomeClass input) {}
-  ///     Function presolved = container.presolve(functionWillBeInjected);
-  ///     presolved(...);
-  Function presolve(Function function,
+  ///     Function curried = container.curry(functionWillBeInjected);
+  ///     curried(...);
+  Function curry(Function function,
       {Map<String, dynamic> namedParameters,
       Map<Type, dynamic> injecting});
+
+  @Deprecated('very soon. Use [curry] instead.')
+  Function presolve(Function function,
+      {Map<String, dynamic> namedParameters,
+      Map<Type, dynamic> injecting})
+    => curry(function, namedParameters: namedParameters, injecting: injecting);
 
   /// Registers a decorator on a target type, so that every time that type
   /// is injected, it will be decorated with the decorator.
@@ -106,6 +112,7 @@ abstract class Container {
   ///     container.make(Parent); // Instance of 'Decorator'
   void decorate(Type target,
       {Type decorator,
+      Iterable<Type> decorators,
       Map<String, dynamic> namedParameters,
       Map<Type, dynamic> injecting});
 }

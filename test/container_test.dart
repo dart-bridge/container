@@ -99,17 +99,17 @@ class ContainerTest implements TestCase {
   }
 
   @test
-  it_can_create_an_auto_resolving_function() {
-    var lonely = new LonelyClass();
+  it_can_curry_a_function() {
+    final lonely = new LonelyClass();
     var wasCalled = false;
-    var function = (ClassWithTypeArgument<String> dep,
+    final function = (ClassWithTypeArgument<String> dep,
         LonelyClass lonelyClass) {
       expect(dep, new isInstanceOf<ClassWithTypeArgument<String>>());
       expect(lonelyClass, equals(lonely));
       wasCalled = true;
     };
-    var autoResolvingFunction = container.presolve(function);
-    autoResolvingFunction(lonely);
+    final curried = container.curry(function);
+    curried(lonely);
     expect(wasCalled, isTrue);
   }
 
@@ -131,8 +131,9 @@ class ContainerTest implements TestCase {
         decorator: LonelyClass), throws);
     container.decorate(ClassWithMethod, decorator: Decorator1);
     container.decorate(ClassWithMethod, decorator: Decorator2);
+    container.decorate(ClassWithMethod, decorators: [Decorator1, Decorator2]);
     final ClassWithMethod instance = container.make(ClassWithMethod);
-    expect(instance.method(), equals('21response'));
+    expect(instance.method(), equals('2121response'));
   }
 
   @test
