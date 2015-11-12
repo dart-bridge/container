@@ -18,18 +18,18 @@ class LowLevelCollaborator implements Collaborator {
 // depend on the low level implementation, hence the interface.
 class HighLevelPolicy {
   final Collaborator dependency;
-  
+
   // However, this class needs a collaborator, so we have to use
   // the `new` keyword.
   HighLevelPolicy()
     : dependency = new LowLevelCollaborator(); // Don't do this.
-  
+
   // That's bad. Instead, there are patterns that lets us push
   // the problem of creating the dependency out to the creator
   // of this class. We can use the factory pattern:
   HighLevelPolicy(Collaborator collaboratorFactory())
     : dependency = collaboratorFactory();
-    
+
   // Or, we can follow the Dependency Injection pattern.
   HighLevelPolicy(this.dependency);
 }
@@ -57,13 +57,13 @@ main() {
   final singleton = new LowLevelCollaborator();
   new HighLevelPolicy(singleton);
   new HighLevelPolicy(singleton);
-  
+
   // The decorator pattern
-  final collaborator = 
+  final collaborator =
     new SomeDecorator(
       new SomeOtherDecorator(
         new LowLevelCollaborator()));
-        
+
   // And whatever else there is to do
 }
 ```
@@ -210,7 +210,7 @@ main() {
   container.resolve(functionWithArgument, injecting: {
     String: 'My string'
   });
-  
+
   // Inject 'My string' as the named parameter 'data'
   container.resolve(functionWithNamed, namedArguments: {
     'data': 'My string'
@@ -226,7 +226,7 @@ or changing input/output of the method.
 class LoggerDecorator implements Logger {
   final Logger _logger;
   LoggerDecorator(this._logger);
-  
+
   ...
 }
 ```
@@ -251,3 +251,57 @@ and get access to the methods above.
 
 There's also an `Application` singleton that implements the container interface, also providing access to the
 configuration of the app, and more.
+
+### Implement the Service Provider pattern
+Here's a quick example of how to use Service Providers to bootstrap the application:
+
+```dart
+main() async {
+  // Create the container
+  final container = new Container();
+
+  // Bind itself as a singleton
+  container.singleton(container);
+
+  final serviceProviderTypes = <Type>[
+    // A List<Type> containing the different service providers
+    ExampleServiceProvider,
+  ];
+
+  // Instantiate the service providers
+  final Iterable<Object> serviceProviders = serviceProviderTypes.map(container.make);
+
+  // Create a function that executes a method (if it exists) on every SP
+  Future runMethodOnEveryServiceProvider(String method) {
+    // Maps every service provider to a Future, dispatch them all concurrently
+    // and wait for when each has completed. This allows the service provider
+    // methods to be asynchronous
+    return Future.wait(serviceProviders.map((serviceProvider) async {
+      // Checks in the service provider has the method
+      if (container.hasMethod(serviceProvider, method))
+        // Execute and await
+        await container.resolveMethod(serviceProvider, method);
+    }));
+  }
+
+  // Now you can decide for yourself what the lifecycle of the service providers will be.
+  // This is basically what Bridge does:
+  await runMethodOnEveryServiceProvider('setUp');
+  await runMethodOnEveryServiceProvider('load');
+  await runMethodOnEveryServiceProvider('run');
+
+  // Now your program is bootstrapped and ready.
+
+  // Finally, Bridge executes a tearDown method on the service providers before exit.
+  await runMethodOnEveryServiceProvider('tearDown');
+}
+
+class ExampleServiceProvider {
+  load(Container container) {
+    // The container injects itself!
+  }
+}
+```
+
+
+
